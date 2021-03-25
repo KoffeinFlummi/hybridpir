@@ -29,6 +29,7 @@ impl HybridPirServer {
         raidpir_servers: usize,
         raidpir_redundancy: usize,
         raidpir_size: usize,
+        raidpir_russians: bool,
         sealpir_poly_degree: u32,
         sealpir_log: u32,
         sealpir_d: u32,
@@ -48,7 +49,8 @@ impl HybridPirServer {
             raidpir_db,
             raidpir_id,
             raidpir_servers,
-            raidpir_redundancy);
+            raidpir_redundancy,
+            raidpir_russians);
 
         Self {
             db_len: db.len(),
