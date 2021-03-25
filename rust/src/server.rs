@@ -63,6 +63,10 @@ impl HybridPirServer {
         }
     }
 
+    pub fn preprocess(&self) {
+        self.raidpir.preprocess();
+    }
+
     pub fn seed(&self) -> u64 {
         self.raidpir.seed()
     }
@@ -188,7 +192,7 @@ impl HybridPirServer {
             t0.elapsed().as_secs_f64() * 1000.0);
 
         // Done, use this thread to rebuild RaidPir queue
-        self.raidpir.preprocess();
+        self.preprocess();
 
         Ok(())
     }
