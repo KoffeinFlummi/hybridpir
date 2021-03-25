@@ -35,7 +35,7 @@ impl HybridPirServer {
     ) -> Self {
         assert!(db.len() > 0);
         assert!(raidpir_size < db.len());
-        assert!(raidpir_size % (raidpir_servers * 64) == 0);
+        assert!(raidpir_size % (raidpir_servers * 8) == 0);
 
         let raidpir_chunksize = (db.len() as f32 / raidpir_size as f32).ceil() as usize;
 
@@ -67,7 +67,7 @@ impl HybridPirServer {
 
     pub fn response(&self,
         seed: u64,
-        raidpir_query: &BitVec<Lsb0>,
+        raidpir_query: &BitVec<Lsb0, u8>,
         sealpir_key: &Vec<u8>,
         sealpir_query: &PirQuery
     ) -> PirReply {
@@ -159,10 +159,7 @@ impl HybridPirServer {
 
         // Convert raidpir_query to bitvec
         assert!(std::mem::size_of::<&usize>() == std::mem::size_of::<&u64>());
-        let raidpir_query: BitVec<Lsb0> = BitVec::from_vec(raidpir_query
-            .iter()
-            .map(|x| *x as usize)
-            .collect::<Vec<usize>>());
+        let raidpir_query: BitVec<Lsb0, u8> = BitVec::from_vec(raidpir_query);
 
         debug!("[{:?}] Received query ({:.4}ms), calculating response...",
             stream.peer_addr().unwrap(),

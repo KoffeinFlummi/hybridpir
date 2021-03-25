@@ -31,7 +31,7 @@ impl HybridPirClient<'_> {
         sealpir_d: u32,
     ) -> Self {
         assert!(raidpir_size < db_len);
-        assert!(raidpir_size % (raidpir_servers * 64) == 0);
+        assert!(raidpir_size % (raidpir_servers * 8) == 0);
 
         let raidpir = RaidPirClient::new(
             raidpir_size,
@@ -60,7 +60,7 @@ impl HybridPirClient<'_> {
         self.sealpir.get_key()
     }
 
-    pub fn query(&self, index: usize, seeds: &Vec<u64>) -> (Vec<BitVec<Lsb0>>, PirQuery) {
+    pub fn query(&self, index: usize, seeds: &Vec<u64>) -> (Vec<BitVec<Lsb0, u8>>, PirQuery) {
         assert!(index < self.db_len);
         assert!(seeds.len() == self.raidpir_servers);
 
@@ -77,7 +77,8 @@ impl HybridPirClient<'_> {
         let raidpir_index = index / self.raidpir_chunksize;
         let sealpir_index = index - raidpir_index * self.raidpir_chunksize;
 
-        let sealpir_responses: Vec<Vec<u8>> = responses.iter()
+        let sealpir_responses: Vec<Vec<u8>> = responses.par_iter()
+            .with_max_len(1)
             .map(|response| self.sealpir.decode_reply(sealpir_index as u32, &response))
             .collect();
 
@@ -144,7 +145,7 @@ impl HybridPirClient<'_> {
                 debug!("[{:?}] Sending query...", stream.peer_addr().unwrap());
 
                 let message = HybridPirMessage::Query(
-                    bitvec_to_u64(raidpir_query),
+                    raidpir_query.clone().into_vec(),
                     self.sealpir_key().clone(), // TODO
                     sealpir_query.clone() // TODO
                 );

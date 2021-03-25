@@ -10,7 +10,7 @@ pub enum HybridPirMessage {
     Hello,
     Seed(u64),
     Query(
-        Vec<u64>,
+        Vec<u8>,
         #[serde(with = "serde_bytes")]
         Vec<u8>,
         PirQuery
@@ -59,21 +59,5 @@ impl HybridPirMessage {
     pub fn read_from<R: Read>(mut stream: &mut R) -> Result<Self, std::io::Error> {
         bincode::deserialize_from(&mut stream)
             .map_err(|e| Error::new(ErrorKind::Other, format!("{}", e)))
-    }
-}
-
-pub fn bitvec_to_u64(bitvec: &BitVec<Lsb0, usize>) -> Vec<u64> {
-    if cfg!(target_pointer_width = "64") {
-        bitvec.as_raw_slice()
-            .iter()
-            .map(|x| *x as u64)
-            .collect()
-    } else {
-        let slice = bitvec.as_raw_slice();
-        assert!(slice.len() % 2 == 0);
-
-        slice.chunks(2)
-            .map(|chunk| (chunk[1] as u64) << 32 + (chunk[0] as u64))
-            .collect()
     }
 }
