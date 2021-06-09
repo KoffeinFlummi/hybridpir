@@ -210,14 +210,18 @@ fn bench_online(c: &mut Criterion) {
     group.plot_config(PlotConfiguration::default()
         .summary_scale(AxisScale::Logarithmic));
 
-    let raidpir_servers = 4;
+    let raidpir_servers = 2;
     let raidpir_redundancy = 2;
-    let element_size = 8;
+    let element_size = 1024;
 
-    let connection: Option<(f32, f32)> = None;
-    //let connection = Some((25.0, 10.0));
+    //let connection: Option<(f32, f32)> = None;
+    let connection = Some((25.0, 10.0));
 
-    for size_exp in [18, 20, 22, 24, 26, 28, 30].iter() {
+    //for size_exp in [10, 12, 14, 16, 18].iter() {
+    //for size_exp in [20, 22, 24, 26].iter() {
+    //for size_exp in [20, 22].iter() {
+    //for size_exp in [14, 16, 18, 20, 22, 24, 26].iter() {
+    for size_exp in [14, 16, 18, 20, 22].iter() {
         let size = 1 << size_exp;
         let index = size >> 1;
 
@@ -237,15 +241,15 @@ fn bench_online(c: &mut Criterion) {
         // TODO: fill queues before benchmark?
 
         group.bench_with_input(BenchmarkId::new(format!("SealPir,n=2^{}", size_exp), 0), &0, |bench, _| {
-            let mut server = PirServer::new(db.len() as u32, 8, 2048, 12, 2);
-            let client = PirClient::new(db.len() as u32, 8, 2048, 12, 2);
+            let mut server = PirServer::new(db.len() as u32, element_size as u32, 2048, 12, 2);
+            let client = PirClient::new(db.len() as u32, element_size as u32, 2048, 12, 2);
 
             {
                 let key = client.get_key();
                 server.set_galois_key(key, 0);
             }
 
-            let mut collection: Vec<[u8; 4]> = Vec::with_capacity(size);
+            let mut collection: Vec<[u8; 8]> = Vec::with_capacity(size);
             for i in 0..size {
                 collection.push(db[i].clone().try_into().unwrap());
             }
@@ -255,11 +259,15 @@ fn bench_online(c: &mut Criterion) {
             bench.iter(|| {
                 let query = client.gen_query(index as u32);
 
+                //eprintln!("query: {:?}", query.query.len());
+
                 if let Some((_, speed)) = connection {
                     std::thread::sleep(Duration::from_secs_f32(query.query.len() as f32 * 8.0 / (speed * 1_000_000.0)));
                 }
 
                 let reply = server.gen_reply(&query, 0);
+
+                //eprintln!("response: {:?}", reply.reply.len());
 
                 if let Some((speed, _)) = connection {
                     std::thread::sleep(Duration::from_secs_f32(reply.reply.len() as f32 * 8.0 / (speed * 1_000_000.0)));
@@ -273,19 +281,20 @@ fn bench_online(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new(format!("RaidPir,n=2^{}", size_exp), 0), &0, |bench, _| {
             let raidpir_db: Vec<RaidPirData> = db.iter().map(|x| RaidPirData::new(x.clone())).collect();
 
-            let mut servers: Vec<RaidPirServer<RaidPirData>> = (0..raidpir_servers)
-                .map(|i| RaidPirServer::new(raidpir_db.clone(), i, raidpir_servers, raidpir_redundancy, true))
+            let mut servers: Vec<Arc<RaidPirServer<RaidPirData>>> = (0..raidpir_servers)
+                .map(|i| Arc::new(RaidPirServer::new(raidpir_db.clone(), i, raidpir_servers, raidpir_redundancy, false)))
                 .collect();
 
             let client = RaidPirClient::new(db.len(), raidpir_servers, raidpir_redundancy);
 
-            bench.iter(|| {
+            let servers_setup = servers.clone();
+            bench.iter_batched(|| {servers_setup.iter().for_each(|s| s.preprocess())}, |()| {
                 let seeds = servers.iter_mut().map(|s| s.seed()).collect();
 
                 let queries = client.query(index, &seeds);
 
                 if let Some((_, speed)) = connection {
-                    let len = &queries[0].clone().into_vec().len() * 4;
+                    let len = queries[0].clone().into_vec().len();
                     std::thread::sleep(Duration::from_secs_f32(len as f32 * 8.0 / (speed * 1_000_000.0)));
                 }
 
@@ -301,10 +310,12 @@ fn bench_online(c: &mut Criterion) {
                 }
 
                 client.combine(responses);
-            });
+            }, BatchSize::NumIterations(32));
         });
 
-        for sealpir_size_exp in [4, 6, 8, 10, 12, 14, 16].iter() {
+        //for sealpir_size_exp in [4, 6, 8, 10, 12, 14, 16].iter() {
+        for sealpir_size_exp in [6].iter() {
+        //for sealpir_size_exp in [10].iter() {
             let exp = size_exp - sealpir_size_exp;
             let raidpir_size = 1usize << exp;
 
@@ -312,21 +323,22 @@ fn bench_online(c: &mut Criterion) {
                 let mut servers: Vec<HybridPirServer> = (0..raidpir_servers)
                     .map(|i| HybridPirServer::new(
                         &db,
-                        i, raidpir_servers, raidpir_redundancy, *raidpir_size, true,
+                        i, raidpir_servers, raidpir_redundancy, *raidpir_size, false,
                         2048, 12, 2
                     )).collect();
 
-                let client = HybridPirClient::new(db.len(), 8,
+                let client = HybridPirClient::new(db.len(), element_size,
                     raidpir_servers, raidpir_redundancy, *raidpir_size,
                     2048, 12, 2);
 
-                bench.iter(|| {
+                let servers_setup = servers.clone();
+                bench.iter_batched(|| {servers_setup.iter().for_each(|s| s.preprocess())}, |()| {
                     let seeds = servers.iter_mut().map(|s| s.seed()).collect();
 
                     let (raidpir_queries, sealpir_query) = client.query(index, &seeds);
 
                     if let Some((_, speed)) = connection {
-                        let len = &raidpir_queries[0].clone().into_vec().len() * 4;
+                        let len = raidpir_queries[0].clone().into_vec().len();
                         std::thread::sleep(Duration::from_secs_f32(len as f32 * 8.0 / (speed * 1_000_000.0)));
                         std::thread::sleep(Duration::from_secs_f32(sealpir_query.query.len() as f32 * 8.0 / (speed * 1_000_000.0)));
                     }
@@ -346,7 +358,7 @@ fn bench_online(c: &mut Criterion) {
 
                     // TODO: see above
                     client.combine(index, responses);
-                });
+                }, BatchSize::NumIterations(32));
             });
         }
     }
