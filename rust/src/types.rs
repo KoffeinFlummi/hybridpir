@@ -10,6 +10,7 @@ pub enum HybridPirMessage {
     Hello,
     Seed(u64),
     Query(
+        #[serde(with = "serde_bytes")]
         Vec<u8>,
         #[serde(with = "serde_bytes")]
         Vec<u8>,
