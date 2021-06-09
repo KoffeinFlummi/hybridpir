@@ -24,7 +24,7 @@ fn main() {
     db[size >> 1] = b"deadbeef".to_vec();
 
     let server = HybridPirServer::new(&db,
-        id, raidpir_servers, raidpir_redundancy, raidpir_size,
+        id, raidpir_servers, raidpir_redundancy, raidpir_size, false,
         2048, 12, 2);
 
     server.accept_connections(("0.0.0.0", (7000 + id) as u16)).unwrap();

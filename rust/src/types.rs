@@ -62,3 +62,82 @@ impl HybridPirMessage {
             .map_err(|e| Error::new(ErrorKind::Other, format!("{}", e)))
     }
 }
+
+// Everything below this point is just for the purposes of benchmarks
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum RaidPirMessage {
+    Hello,
+    Seed(u64),
+    Query(
+        #[serde(with = "serde_bytes")]
+        Vec<u8>,
+    ),
+    Response(Vec<u8>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum SealPirMessage {
+    Query(
+        #[serde(with = "serde_bytes")]
+        Vec<u8>,
+        PirQuery,
+    ),
+    Response(PirReply),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum BenchmarkParams {
+    SealPir {
+        db_size: usize,
+        element_size: usize,
+        poly_degree: u32,
+        log: u32,
+        d: u32
+    },
+    RaidPir {
+        db_size: usize,
+        element_size: usize,
+        servers: usize,
+        redundancy: usize,
+        russians: bool
+    },
+    HybridPir{
+        db_size: usize,
+        element_size: usize,
+        raidpir_servers: usize,
+        raidpir_redundancy: usize,
+        raidpir_size: usize,
+        raidpir_russians: bool,
+        sealpir_poly_degree: u32,
+        sealpir_log: u32,
+        sealpir_d: u32
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum ProtocolMessage {
+    SealPir(SealPirMessage),
+    RaidPir(RaidPirMessage),
+    HybridPir(HybridPirMessage),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum BenchmarkMessage {
+    Setup(BenchmarkParams),
+    RefreshQueue,
+    Ready,
+    Protocol(ProtocolMessage),
+}
+
+impl BenchmarkMessage {
+    pub fn write_to<W: Write>(&self, mut stream: &mut W) -> Result<(), std::io::Error> {
+        bincode::serialize_into(&mut stream, self)
+            .map_err(|e| Error::new(ErrorKind::Other, format!("{}", e)))
+    }
+
+    pub fn read_from<R: Read>(mut stream: &mut R) -> Result<Self, std::io::Error> {
+        bincode::deserialize_from(&mut stream)
+            .map_err(|e| Error::new(ErrorKind::Other, format!("{}", e)))
+    }
+}

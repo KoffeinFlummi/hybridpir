@@ -1,5 +1,3 @@
-use std::net::SocketAddr;
-
 use rand::rngs::StdRng;
 use rand::{RngCore, SeedableRng};
 use sealpir::PirReply;
@@ -14,7 +12,7 @@ fn test_pir() {
     let size = 1 << 20;
     let raidpir_servers = 2;
     let raidpir_redundancy = 2;
-    let raidpir_size = 1 << 8;
+    let raidpir_size = 1 << 10;
     let index = size >> 1;
 
     let mut db: Vec<Vec<u8>> = Vec::with_capacity(size);
@@ -28,7 +26,7 @@ fn test_pir() {
     let mut servers: Vec<HybridPirServer> = (0..raidpir_servers)
         .map(|i| HybridPirServer::new(
             &db,
-            i, raidpir_servers, raidpir_redundancy, raidpir_size,
+            i, raidpir_servers, raidpir_redundancy, raidpir_size, false,
             2048, 12, 2
         )).collect();
 
@@ -42,7 +40,7 @@ fn test_pir() {
 
     let sealpir_key = client.sealpir_key();
 
-    let mut responses: Vec<PirReply> = servers
+    let responses: Vec<PirReply> = servers
         .iter_mut()
         .zip(seeds.iter().zip(raidpir_queries.iter()))
         .map(|(server, (seed, raidpir_query))| server.response(*seed, raidpir_query, sealpir_key, &sealpir_query))
@@ -70,9 +68,9 @@ fn test_tcp() {
     }
     db[index] = b"deadbeef".to_vec();
 
-    for i in (0..raidpir_servers) {
+    for i in 0..raidpir_servers {
         let server = HybridPirServer::new(&db,
-            i, raidpir_servers, raidpir_redundancy, raidpir_size,
+            i, raidpir_servers, raidpir_redundancy, raidpir_size, false,
             2048, 12, 2);
 
         std::thread::spawn(move || {
