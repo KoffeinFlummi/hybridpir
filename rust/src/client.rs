@@ -102,6 +102,7 @@ impl HybridPirClient<'_> {
                 let stream = TcpStream::connect(target)?;
                 stream.set_read_timeout(Some(Duration::from_secs(60)))?;
                 stream.set_write_timeout(Some(Duration::from_secs(60)))?;
+                stream.set_nodelay(true);
                 Ok(stream)
             })
             .with_max_len(1) // Ensure each iteration gets a thread

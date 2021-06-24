@@ -40,3 +40,7 @@ lto = true
 [[bench]]
 name = "pir"
 harness = false
+
+[[bench]]
+name = "benchserver"
+harness = false

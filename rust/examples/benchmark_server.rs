@@ -119,8 +119,10 @@ impl BenchmarkServer<'_> {
             ProtocolMessage::SealPir(sealpir_msg) => {
                 if let BenchmarkServer::SealPir(ref mut server) = self {
                     if let SealPirMessage::Query(key, query) = sealpir_msg {
+                        let t = std::time::Instant::now();
                         server.set_galois_key(&key, 0);
                         let reply = server.gen_reply(&query, 0);
+                        debug!("Response time: {:?}", t.elapsed().as_secs_f64() * 1000.0);
                         Some(ProtocolMessage::SealPir(SealPirMessage::Response(reply)))
                     } else {
                         unreachable!();
@@ -132,11 +134,15 @@ impl BenchmarkServer<'_> {
             ProtocolMessage::RaidPir(raidpir_msg) => {
                 if let BenchmarkServer::RaidPir(ref mut server, ref mut seed) = self {
                     if let RaidPirMessage::Hello = raidpir_msg {
+                        let t = std::time::Instant::now();
                         *seed = server.seed();
+                        debug!("Seed time: {:?}", t.elapsed().as_secs_f64() * 1000.0);
                         Some(ProtocolMessage::RaidPir(RaidPirMessage::Seed(*seed)))
                     } else if let RaidPirMessage::Query(query) = raidpir_msg {
+                        let t = std::time::Instant::now();
                         let bitvec: BitVec<Lsb0, u8> = BitVec::from_vec(query);
                         let response: Vec<u8> = server.response(*seed, &bitvec).into();
+                        debug!("Response time: {:?}", t.elapsed().as_secs_f64() * 1000.0);
                         Some(ProtocolMessage::RaidPir(RaidPirMessage::Response(response)))
                     } else {
                         unreachable!();
@@ -148,11 +154,15 @@ impl BenchmarkServer<'_> {
             ProtocolMessage::HybridPir(hybridpir_msg) => {
                 if let BenchmarkServer::HybridPir(ref mut server, ref mut seed) = self {
                     if let HybridPirMessage::Hello = hybridpir_msg {
+                        let t = std::time::Instant::now();
                         *seed = server.seed();
+                        debug!("Seed time: {:?}", t.elapsed().as_secs_f64() * 1000.0);
                         Some(ProtocolMessage::HybridPir(HybridPirMessage::Seed(*seed)))
                     } else if let HybridPirMessage::Query(raidpir_query, sealpir_key, sealpir_query) = hybridpir_msg {
+                        let t = std::time::Instant::now();
                         let bitvec: BitVec<Lsb0, u8> = BitVec::from_vec(raidpir_query);
                         let response = server.response(*seed, &bitvec, &sealpir_key, &sealpir_query);
+                        debug!("Response time: {:?}", t.elapsed().as_secs_f64() * 1000.0);
                         Some(ProtocolMessage::HybridPir(HybridPirMessage::Response(response)))
                     } else {
                         unreachable!();
@@ -166,8 +176,9 @@ impl BenchmarkServer<'_> {
 }
 
 pub fn handle_connection(id: usize, mut stream: TcpStream) -> Result<(), Error> {
-    stream.set_read_timeout(Some(Duration::from_secs(60)))?;
-    stream.set_write_timeout(Some(Duration::from_secs(60)))?;
+    stream.set_read_timeout(Some(Duration::from_secs(3600)))?;
+    stream.set_write_timeout(Some(Duration::from_secs(3600)))?;
+    stream.set_nodelay(true)?;
 
     debug!("[{:?}] Accepting connection", stream.peer_addr().unwrap());
 
@@ -204,7 +215,6 @@ pub fn handle_connection(id: usize, mut stream: TcpStream) -> Result<(), Error> 
             }
         }
     }
-    // TODO: terminate?
 }
 
 fn main() {
