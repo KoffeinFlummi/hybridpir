@@ -7,7 +7,7 @@ export PATH=$PATH:/opt/android-sdk/ndk/21.0.6113669/toolchains/llvm/prebuilt/lin
 
 sed -i 's/^#crate-type/crate-type/' Cargo.toml
 
-cargo build --target aarch64-linux-android --release
-cargo build --target armv7-linux-androideabi --release
+rustup run nightly cargo build --target aarch64-linux-android --release
+rustup run nightly cargo build --target armv7-linux-androideabi --release
 
 sed -i 's/^crate-type/#crate-type/' Cargo.toml

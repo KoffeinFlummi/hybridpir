@@ -21,20 +21,10 @@ public class MainActivity extends AppCompatActivity {
             "192.168.178.20:7001"
         };
 
-        byte[] query = i.sendQuery(
-            targets,
-            1 << 20,
-            8,
-            2,
-            1 << 12,
-            2048,
-            12,
-            2,
-            1 << 19
-        );
+        i.benchmarkPEM();
 
         TextView tv = (TextView)findViewById(R.id.textView);
-        tv.setText(Arrays.toString(query));
+        tv.setText("Done!");
     }
 
     static {
