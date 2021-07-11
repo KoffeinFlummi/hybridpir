@@ -60,7 +60,7 @@ impl HybridPirClient<'_> {
         self.sealpir.get_key()
     }
 
-    pub fn query(&self, index: usize, seeds: &Vec<u64>) -> (Vec<BitVec<Lsb0, u8>>, PirQuery) {
+    pub fn query(&self, index: usize, seeds: &Vec<u128>) -> (Vec<BitVec<Lsb0, u8>>, PirQuery) {
         assert!(index < self.db_len);
         assert!(seeds.len() == self.raidpir_servers);
 
@@ -102,14 +102,14 @@ impl HybridPirClient<'_> {
                 let stream = TcpStream::connect(target)?;
                 stream.set_read_timeout(Some(Duration::from_secs(60)))?;
                 stream.set_write_timeout(Some(Duration::from_secs(60)))?;
-                stream.set_nodelay(true);
+                stream.set_nodelay(true)?;
                 Ok(stream)
             })
             .with_max_len(1) // Ensure each iteration gets a thread
             .collect::<Result<Vec<TcpStream>, Error>>()?;
 
         // Send hello message and retrieve seed for each server
-        let seeds: Vec<u64> = streams
+        let seeds: Vec<u128> = streams
             .par_iter_mut()
             .map(|mut stream| {
                 let hello = HybridPirMessage::Hello;
@@ -125,7 +125,7 @@ impl HybridPirClient<'_> {
                 }
             })
             .with_max_len(1)
-            .collect::<Result<Vec<u64>, Error>>()?;
+            .collect::<Result<Vec<u128>, Error>>()?;
 
         let t1 = Instant::now();
 

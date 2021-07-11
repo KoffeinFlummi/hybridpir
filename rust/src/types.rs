@@ -8,7 +8,7 @@ use bincode;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum HybridPirMessage {
     Hello,
-    Seed(u64),
+    Seed(u128),
     Query(
         #[serde(with = "serde_bytes")]
         Vec<u8>,
@@ -68,7 +68,7 @@ impl HybridPirMessage {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum RaidPirMessage {
     Hello,
-    Seed(u64),
+    Seed(u128),
     Query(
         #[serde(with = "serde_bytes")]
         Vec<u8>,

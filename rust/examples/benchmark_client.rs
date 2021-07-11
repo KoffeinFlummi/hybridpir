@@ -102,7 +102,7 @@ fn run_query(streams: &mut Vec<TcpStream>, params: &BenchmarkParams) -> Result<(
                     }
                 })
                 .with_max_len(1)
-                .collect::<Result<Vec<u64>, Error>>()?;
+                .collect::<Result<Vec<u128>, Error>>()?;
 
             let client = RaidPirClient::new(*db_size, *servers, *redundancy);
             let t = std::time::Instant::now();
@@ -156,7 +156,7 @@ fn run_query(streams: &mut Vec<TcpStream>, params: &BenchmarkParams) -> Result<(
                     }
                 })
                 .with_max_len(1)
-                .collect::<Result<Vec<u64>, Error>>()?;
+                .collect::<Result<Vec<u128>, Error>>()?;
 
             let client = HybridPirClient::new(
                 *db_size,

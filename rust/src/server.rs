@@ -67,12 +67,12 @@ impl HybridPirServer {
         self.raidpir.preprocess();
     }
 
-    pub fn seed(&self) -> u64 {
+    pub fn seed(&self) -> u128 {
         self.raidpir.seed()
     }
 
     pub fn response(&self,
-        seed: u64,
+        seed: u128,
         raidpir_query: &BitVec<Lsb0, u8>,
         sealpir_key: &Vec<u8>,
         sealpir_query: &PirQuery

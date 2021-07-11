@@ -16,8 +16,8 @@ use log::*;
 
 enum BenchmarkServer<'a> {
     SealPir(PirServer<'a>),
-    RaidPir(RaidPirServer<RaidPirData>, u64),
-    HybridPir(HybridPirServer, u64),
+    RaidPir(RaidPirServer<RaidPirData>, u128),
+    HybridPir(HybridPirServer, u128),
 }
 
 impl BenchmarkServer<'_> {
