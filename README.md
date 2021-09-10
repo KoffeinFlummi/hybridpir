@@ -1,3 +1,12 @@
+HybridPIR
+=========
+
+Rust implementation of a hybrid Private Information Retrieval (PIR) protocol, using CIP-PIR as the multi-server, and SealPIR as the single-server protocol, including Android example.
+
+CIP-PIR: [implementation](https://github.com/KoffeinFlummi/raidpir), [paper](https://eprint.iacr.org/2021/823)
+
+SealPIR: [implementation](https://github.com/microsoft/sealpir/), [paper](https://eprint.iacr.org/2017/1142)
+
 # Dependencies
 
 - Rust (`rustup`)
